@@ -1,0 +1,27 @@
+#Details of the model are defined here. 
+#Experiment identification number can be defined here to keep track of the runs.
+details:
+  experiment_id: 1
+
+#Details of input data is defined here
+data:
+  name: "STL10"                 #Name of the standard dataset used for benchmarking
+  root_path: "input_data"       #Root path of the dataset
+  image_size: [224, 224]        #Image size required for the input to the model
+  batch_size: [1, 4]         #List of batch size for which experiments are carried out
+
+#Details of model, for which benchmarking is done, is defined here
+model:
+  name: "Densenet121"           #Name of the model
+  #List of the optimization method applied to the model. 
+  #Supported arguments are null, "UnstructuredPruning", "StructuredPruning", "Quantization", "ONNX". null for Base Model.
+  # optimization_criteria: [null, "UnstructuredPruning", "StructuredPruning", "Quantization", "ONNX"]
+  optimization_criteria: [null] 
+
+#Details of data storage paths and file names is defined here
+data_storage:
+  result_output_path: "./results"                   #path for storing the benchmarking result
+  result_csv_file_name: "benchmark_results"         #file name of the csv file in which results are stored
+  model_output_path: "./results/models"             #path for storing the models, both base nd optimised model.
+  profile_report_output_path: "./results/profiles"  #path for storing detailed reports from profiler
+  tensorboard_logs_path: "./logs/tensorboard"       #path for storing logs for tensorboard
