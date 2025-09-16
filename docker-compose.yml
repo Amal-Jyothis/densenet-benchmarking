@@ -11,26 +11,12 @@ services:
       --gpu-enabled ${GPU_ENABLED}
     volumes:
       - ${OUTPUT_DIR}:/benchmark/${OUTPUT_DIR}
-    # command: run python main.py
-    # working_dir: /benchmark
-    # volumes:
-    #   - .:/benchmark                   
-    #   - results:/benchmark/log     
-    # environment:
-    #   - ENV=development
-    #   - RESULTS_DIR=/benchmark/log
-    # ports:
-    #   - "8000:8000"              
-    # depends_on:
-    #   - tensorboard
 
   # tensorboard:
   #   image: tensorflow/tensorflow:latest
   #   container_name: tensorboard
   #   command: >
-  #     tensorboard --logdir=${OUTPUT_DIR} --host=http://localhost --port=6006 --load_fast=false
-  #   # volumes:
-  #   #   - results:/results         
+  #     tensorboard --logdir=${OUTPUT_DIR} --host=http://localhost --port=6006 --load_fast=false       
   #   ports:
   #     - "6006:6006"             
   #   environment:
