@@ -24,4 +24,3 @@ Pruning is the practice of removing the weights or layers in a neural network wh
 ## ONNX
 ONNX (Open Neural Network Exchange) is an open standard format for representing machine learning models. Machine learning built on frameworks like Pytorch and Tensorflow can be converted to ONNX format for faster inference.
 
-# densenet-benchmarking
