@@ -5,7 +5,7 @@ details:
 
 #Details of input data is defined here
 data:
-  name: "STL10"                 #Name of the standard dataset used for benchmarking
+  name: "ImageNet"                 #Name of the standard dataset used for benchmarking
   root_path: "input_data"       #Root path of the dataset
   image_size: [224, 224]        #Image size required for the input to the model
   batch_size: [1, 4]         #List of batch size for which experiments are carried out
