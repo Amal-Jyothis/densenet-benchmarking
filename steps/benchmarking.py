@@ -4,11 +4,12 @@ from torch.profiler import profile, ProfilerActivity, record_function
 from torch.utils.data import DataLoader
 import torch, onnxruntime
 import sys, traceback
+import numpy, torchvision
 
 logger = Logger(__name__)
 
 def benchmarking(
-        model_path: str, 
+        optimised_model_path: str,
         dataloader: DataLoader, 
         tensorboard_logs_path: str, 
         optimization_method: str, 
@@ -29,6 +30,8 @@ def benchmarking(
 
     try:
         logger.info(f"Starting benchmarking of the model")
+        if torch.cuda.is_available():
+            logger.info("CUDA is available")
         activities = [ProfilerActivity.CPU]
         if device == 'cuda':
             activities += [ProfilerActivity.CUDA] 
@@ -48,14 +51,14 @@ def benchmarking(
             with profiler as prof:
                 with record_function("model_inference"):
                     if device == 'cuda':
-                        ort_session = onnxruntime.InferenceSession(model_path, providers=["CUDAExecutionProvider"])
-                    if device == 'cpu':
-                        ort_session = onnxruntime.InferenceSession(model, providers=["CPUExecutionProvider"])
+                        ort_session = onnxruntime.InferenceSession(optimised_model_path, providers=["CUDAExecutionProvider"])
+                    elif device == 'cpu':
+                        ort_session = onnxruntime.InferenceSession(optimised_model_path, providers=["CPUExecutionProvider"])
                     else:
                         raise ValueError("Device {} not supported.".format(device))
                     
                     for i, (images, _) in enumerate(dataloader):
-                        output = ort_session.run(None, {"x": images.numpy()})
+                        output = output = torch.tensor(numpy.array(ort_session.run(None, {"x": images.numpy()})))
                         output = torch.squeeze(output, 0)
                         prof.step()
 
@@ -68,7 +71,8 @@ def benchmarking(
 
             with profiler as prof:
                 with record_function("model_inference"):
-                    model = torch.load(model_path, weights_only=False).to(torch.device(device))
+                    model = torch.load(optimised_model_path, weights_only=False).to(torch.device(device))
+                    model.eval()
                     if device == 'cuda':
                         torch.cuda.synchronize()
                     
@@ -81,13 +85,13 @@ def benchmarking(
                         batch_count += 1
 
         if device == 'cuda':
-            peak_vram = max(evt.cuda_memory_usage for evt in prof.key_averages()) / 1024**2
+            peak_vram = max(evt.device_memory_usage for evt in prof.key_averages()) / 1024**2
         else:
             peak_vram = None
         peak_cpu_mem = max(evt.cpu_memory_usage for evt in prof.key_averages()) / 1024**2
 
         if device == 'cuda':
-            total_cuda_time_ms = sum(evt.cuda_time_total for evt in prof.key_averages()) / 1000.0
+            total_cuda_time_ms = sum(evt.device_time_total for evt in prof.key_averages()) / 1000.0
         else:
             total_cuda_time_ms = None
         total_cpu_time_ms = sum(evt.cpu_time_total for evt in prof.key_averages()) / 1000.0 
@@ -96,7 +100,7 @@ def benchmarking(
             avg_latency = (total_cuda_time_ms/batch_count)
             avg_throughput = (dataloader.batch_size/avg_latency) * 1000
 
-        if device == 'cpu':
+        elif device == 'cpu':
             avg_latency = (total_cpu_time_ms/batch_count)
             avg_throughput = (dataloader.batch_size/avg_latency) * 1000
 
@@ -112,7 +116,7 @@ def benchmarking(
             "throughput_samples_sec": avg_throughput,
         }
         
-        # logger.info(f"\n{prof.key_averages().table(sort_by=sort_by_keyword)}")
+        # logger.info(f"\n{prof.key_averages()}")
 
         return metrics
         

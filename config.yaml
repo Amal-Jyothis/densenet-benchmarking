@@ -16,7 +16,6 @@ model:
   #List of the optimization method applied to the model. 
   #Supported arguments are null, "UnstructuredPruning", "StructuredPruning", "ONNX". null for Base Model.
   optimization_criteria: [null, "Pruning", "ONNX"]
-  # optimization_criteria: ["ONNX"]
 
 #Details of data storage paths and file names is defined here
 data_storage:

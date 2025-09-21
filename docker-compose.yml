@@ -1,27 +1,28 @@
 services:
-  app:
+  inference:
     build: .
-    container_name: benchmark
+    container_name: densenet-benchmark
+    image: densenet-benchmarking:latest
     environment:
       - OUTPUT_DIR=${OUTPUT_DIR}
       - GPU_ENABLED=${GPU_ENABLED}
     command: >
-      python main.py 
+      python -u main.py 
       --output-dir ${OUTPUT_DIR} 
       --gpu-enabled ${GPU_ENABLED}
     volumes:
       - ${OUTPUT_DIR}:/benchmark/${OUTPUT_DIR}
+      - ./logs:/benchmark/logs
+    # deploy:
+    gpus: all
 
-  # tensorboard:
-  #   image: tensorflow/tensorflow:latest
-  #   container_name: tensorboard
-  #   command: >
-  #     tensorboard --logdir=${OUTPUT_DIR} --host=http://localhost --port=6006 --load_fast=false       
-  #   ports:
-  #     - "6006:6006"             
-  #   environment:
-  #     - TF_CPP_MIN_LOG_LEVEL=3
-  #     - TB_PORT=6006
+  tensorboard:
+    image: densenet-benchmarking:latest
+    volumes:
+      - ./logs:/benchmark/logs
+    command: >
+      tensorboard --logdir=/benchmark/logs/tensorboard --host=0.0.0.0 --port=6006 --load_fast=false       
+    ports:
+      - "6006:6006"             
+    
 
-# volumes:
-#   results:

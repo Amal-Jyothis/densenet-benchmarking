@@ -33,8 +33,8 @@ def benchmark_pipeline(config_path: str, args):
         Carrying out benchmarking of models for list of batch sizes and optimisation techniques
         '''
         for optimization_method in config["model"]["optimization_criteria"]:
-            for batch_size in config["data"]["batch_size"]:
 
+            for batch_size in config["data"]["batch_size"]:
                 if args.gpu_enabled == 'true':
                     device = 'cuda'
                 else:
@@ -70,7 +70,7 @@ def benchmark_pipeline(config_path: str, args):
                     dataloader,
                     optimization_method,
                     save_data,
-                    config["data_storage"]["model_output_path"]
+                    args.output_dir
                     )
                 
                 '''
@@ -85,11 +85,11 @@ def benchmark_pipeline(config_path: str, args):
                 Returns the benchmarking metrics for the model
                 '''
                 metrics = benchmarking(
-                    optimised_model_path, 
-                    dataloader,
-                    config["data_storage"]["tensorboard_logs_path"],
-                    optimization_method,
-                    device
+                    optimised_model_path=optimised_model_path,
+                    dataloader=dataloader,
+                    tensorboard_logs_path=config["data_storage"]["tensorboard_logs_path"],
+                    optimization_method=optimization_method,
+                    device=device
                     )
 
                 '''
@@ -99,16 +99,16 @@ def benchmark_pipeline(config_path: str, args):
                 top_five_accuracy: top-5 accuracy
                 '''
                 top_one_accuracy = model_evaluation(
-                    optimised_model_path, 
-                    dataloader, 
+                    optimised_model_path=optimised_model_path, 
+                    dataloader=dataloader, 
                     top_N=1,
                     device=device,
                     optimization_method=optimization_method
                     )
                 
                 top_five_accuracy = model_evaluation(
-                    optimised_model_path,
-                    dataloader,
+                    optimised_model_path=optimised_model_path,
+                    dataloader=dataloader,
                     top_N=5,
                     device=device,
                     optimization_method=optimization_method

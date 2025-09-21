@@ -15,7 +15,8 @@ def load_model(
     '''
     model = None
     if model_name == 'Densenet121':
-        model = torchvision.models.densenet121(num_classes=10)
+        model = torchvision.models.densenet121(weights=torchvision.models.DenseNet121_Weights.DEFAULT)
+        model.eval()
         return model
     else:
         raise ValueError("Model {} not supported.".format(model_name))

@@ -2,12 +2,10 @@ from steps.logger_file import Logger
 from steps.saving_data import DataSaving
 
 import torch
-import warnings
+import warnings, os, sys, traceback
 from typing import Union
-import torch.nn.utils.prune as prune
 from torch.utils.data import DataLoader
-from torch.ao.quantization.quantizer.x86_inductor_quantizer import X86InductorQuantizer
-from torchao.quantization.pt2e.quantize_pt2e import prepare_pt2e, convert_pt2e
+import torch_pruning as tp
 
 logger = Logger(__name__)
 
@@ -33,82 +31,49 @@ def model_optimise(
         model_path: path of the saved model
     '''
 
-    if optimization_method == None:
-        model_path = save_data.save_model(
-            model,
-            model_save_path,
-            optimization_method
-        )
-        return model_path
-    
-    if optimization_method == 'UnstructuredPruning':
-        logger.info(f"Carrying out unstructured pruning of the model.")
-        '''
-        Carrying out unstructured pruning with removal of 30% of insignificant parameters.
-        Weights lying in bottom 30% on the basis of L1 norm is removed
-        '''
-        prune.l1_unstructured(model.features.conv0, name='weight', amount=0.3)
-        prune.remove(model.features.conv0, 'weight')
-        model_path = save_data.save_model(
-            model,
-            model_save_path,
-            optimization_method
-        )
-        return model_path
-    
-    if optimization_method == 'StructuredPruning':
-        logger.info(f"Carrying out structured pruning of the model.")
-        '''
-        Carrying out structured pruning with removal of 30% of insignificant parameters.
-        Filters lying in bottom 30% on the basis of L2 norm is removed
-        '''
-        prune.ln_structured(model.features.conv0, name='weight', amount=0.3, n=2, dim=0) 
-        prune.remove(model.features.conv0, 'weight')
-        model_path = save_data.save_model(
-            model,
-            model_save_path,
-            optimization_method
-        )
-        return model_path
+    try:
+        model_save_path = os.path.join(model_save_path, "models")
 
-    if optimization_method == 'Quantization':
-        logger.info("Carrying out quantization of the model.")
-        model.eval()
-        example_images, example_labels = next(iter(dataloader))
-        example_inputs = (example_images,)
+        if optimization_method == None:
+            model_path = save_data.save_model(
+                model,
+                model_save_path,
+                optimization_method
+            )
+            return model_path
+        
+        if optimization_method == 'Pruning':
+            logger.info(f"Carrying out pruning of the model.")
+            '''
+            Carrying out unstructured pruning with removal of insignificant parameters.
+            '''
+            example_inputs = torch.randn(1, 3, 224, 224)
 
-        '''
-        Carrying out quantization of the model. Converted from float to int8 by calibrating with sample input data to minimise inaccuracies.
-        '''
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            exported = torch.export.export(model, example_inputs).module()
-            quantizer = X86InductorQuantizer()
-            prepared = prepare_pt2e(exported, quantizer)
-            def calibrate(model, data_loader):
-                torch.ao.quantization.move_exported_model_to_eval(model)
-                with torch.no_grad():
-                    for i, (image, _) in enumerate(data_loader):
-                        if i >= 10:
-                            break
-                        model(image)
-            calibrate(prepared, dataloader)
-            quant_model = convert_pt2e(prepared)
-            
-        model_path = save_data.save_model(
-            quant_model,
-            model_save_path,
-            optimization_method
-        )
-        return model_path
+            DG = tp.DependencyGraph().build_dependency(model, example_inputs=example_inputs)
+            group = DG.get_pruning_group(model.features.conv0, tp.prune_conv_out_channels, idxs=range(0, model.features.conv0.out_channels, 6))
+
+            if DG.check_pruning_group(group):
+                group.prune()
+
+            model.zero_grad()
+            model_path = save_data.save_model(
+                model,
+                model_save_path,
+                optimization_method
+            )
+            return model_path
+        
+        elif optimization_method == 'ONNX':
+            logger.info("Generating ONNX model.")
+            example_images, example_labels = next(iter(dataloader))
+            example_inputs = (example_images,)
+            model_path = model_save_path + "/model" + optimization_method + ".onnx"
+            torch.onnx.export(model, example_inputs, model_path, dynamo=True)
+            return model_path
+        else:
+            raise ValueError("Optimization method {} not supported.".format(optimization_method))
     
-    if optimization_method == 'ONNX':
-        logger.info("Generating ONNX model.")
-        example_images, example_labels = next(iter(dataloader))
-        example_inputs = (example_images,)
-        model_path = model_save_path + "/model" + optimization_method + ".onnx"
-        torch.onnx.export(model, example_inputs, model_path, dynamo=True)
-        return model_path
-    else:
-        raise ValueError("Optimization method {} not supported.".format(optimization_method))
-    
+    except Exception as e:
+        _, _, tb = sys.exc_info()
+        line_no = traceback.extract_tb(tb)[-1][1]
+        logger.error(f'Error while model optimization: {e} at line {line_no}')

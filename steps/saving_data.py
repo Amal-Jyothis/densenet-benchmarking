@@ -1,7 +1,9 @@
-import torch, csv, os
+import torch, csv, os, sys
 from steps.logger_file import Logger
 
 logger = Logger(__name__)
+
+sys.setrecursionlimit(10000)
 
 class DataSaving():
     def __init__(self, file_save_path, file_name, experiment_id = None):
@@ -11,6 +13,8 @@ class DataSaving():
             
             self.file_save_path = file_save_path
             self.file_name = file_name
+
+            self.count = 0
             
             if not os.path.exists(self.file_save_path):
                     os.makedirs(self.file_save_path)
@@ -56,7 +60,9 @@ class DataSaving():
             output.update(metrics)
             with open(self.file_save_path_with_name, "a", newline="") as f:
                 w = csv.DictWriter(f, output.keys())
-                w.writeheader()
+                if self.count == 0:
+                    w.writeheader()
+                    self.count = 1
                 w.writerow(output)
 
         except Exception as e:

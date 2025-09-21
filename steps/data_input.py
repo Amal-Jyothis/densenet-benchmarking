@@ -1,5 +1,5 @@
 from steps.logger_file import Logger
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 from torchvision import transforms, datasets
 import sys, traceback
@@ -29,10 +29,10 @@ def data_input(
         Defining image transformation on the input data
         '''
         image_transform = transforms.Compose([
-            transforms.Resize(image_size),
+            transforms.Resize(256),
             transforms.CenterCrop(image_size),
             transforms.ToTensor(),
-            transforms.Normalize([0.5], [0.5])
+            transforms.Normalize([0.485,0.456,0.406], [0.229,0.224,0.225])
         ])
 
         '''
@@ -40,13 +40,22 @@ def data_input(
         '''
         if name == "STL10":
             dataset = datasets.STL10(root_path, transform=image_transform, download=True)
-            dataloader = DataLoader(dataset=dataset, batch_size=batch_size, generator=torch.Generator().manual_seed(42))
-        elif name == "CIFAR10":
+            dataloader = DataLoader(dataset=dataset, batch_size=batch_size, num_workers=8, generator=torch.Generator().manual_seed(42))
+            logger.info('Data ingestion completed')
+            return dataloader
+        if name == "CIFAR10":
             dataset = datasets.CIFAR10(root_path, transform=image_transform, download=True)
             dataloader = DataLoader(dataset=dataset, batch_size=batch_size, generator=torch.Generator().manual_seed(42))
+            logger.info('Data ingestion completed')
+            return dataloader
+        if name == "ImageNet":
+            dataset = datasets.ImageNet(f"{root_path}", transform=image_transform, split="val")
+            dataloader = DataLoader(dataset=dataset, batch_size=batch_size, generator=torch.Generator().manual_seed(42))
+            logger.info('Data ingestion completed')
+            return dataloader
         else:
             raise ValueError("Dataset {} not supported.".format(name))
-        return dataloader
+        
     
     except Exception as e:
         _, _, tb = sys.exc_info()

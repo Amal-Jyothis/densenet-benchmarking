@@ -1,12 +1,14 @@
 from steps.logger_file import Logger
+
 import argparse
+from fastapi import FastAPI
+import uvicorn
 
 from pipeline.benchmark_pipeline import benchmark_pipeline
 
 logger = Logger(__name__)
 
 if __name__ == "__main__":
-
     config_path = "config.yaml"
     logger.info(f"Starting....")
 
