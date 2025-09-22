@@ -13,7 +13,7 @@ cd densenet-benchmarking
 chmod +x build_and_run.sh
 ./build_and_run.sh --output-dir ./results --gpu-enabled true
 ```
-After the run is complete, results are stored in folder ``./test_results`` in ``benchmark_results.csv``. The detailed summary of resource allocation can be seen on tensorboard during the run at ``localhost:6006``
+After the run is complete, results are stored in folder ``./results`` in ``benchmark_results.csv``. The detailed summary of resource allocation can be seen on tensorboard during the run at ``localhost:6006``
 
 # Optimization Approaches
 Optimization approaches explored are pruning of model, and ONNX deployment of model.
