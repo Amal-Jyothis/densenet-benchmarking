@@ -1,5 +1,5 @@
 # Project Overview
-This repository aims at benchmarking and optimizing the DenseNet architecture. Validation set of ImageNet dataset is being used as the input for the model with 1024 samples. Benchmarking of the model is done using Pytorch Profiler. The key parameters monitored are RAM usage, VRAM usage for GPU, latency and throughput of the model on the device. The model is optimised to reduce the memory usage and latency of the model inference. Optimisation techniques explored on the model are pruning, quantization and model deployment in ONNX format.
+This repository aims at benchmarking and optimizing the DenseNet architecture. 1024 samples from the validation set of ImageNet dataset is being used as the input for the model. Benchmarking of the model is done using Pytorch Profiler and GPU resource allocation is visualised using Tensorboard. The key parameters monitored are RAM usage, VRAM usage for GPU, latency, throughput and accuracy of the model on the device. The model is optimised to reduce the memory usage and latency of the model inference. Optimisation techniques explored on the model are pruning, quantization and model deployment in ONNX format.
 
 # Setup Instructions and Usage
 Requirements:
@@ -8,12 +8,12 @@ Docker
 ```
 Run
 ```
-git clone <your-repo-url>
-cd <your-repo-name>
+git clone https://github.com/Amal-Jyothis/densenet-benchmarking.git
+cd densenet-benchmarking
 chmod +x build_and_run.sh
-./build_and_run.sh --output-dir ./test_results
+./build_and_run.sh --output-dir ./results --gpu-enabled true
 ```
-After the run is complete, results are stored in folder ``./test_results`` in ``benchmark_results.csv``. The detailed summary of resource allocation can be seen during the run at ``localhost:6006``
+After the run is complete, results are stored in folder ``./test_results`` in ``benchmark_results.csv``. The detailed summary of resource allocation can be seen on tensorboard during the run at ``localhost:6006``
 
 # Optimization Approaches
 Optimization approaches explored are pruning of model, and ONNX deployment of model.
@@ -43,7 +43,7 @@ The metrics reported for each methods are: RAM usage, VRAM usage for GPU, latenc
 |Densenet121|16        |ONNX                  |cuda  |1.1          |88.4          |97.1          |73.7        |0            |31.9                |500.9                     |
 |Densenet121|32        |ONNX                  |cuda  |1.1          |88.4          |97.1          |147.5       |0            |53.5                |597.8                     |
 
-The performance improvement on pruning methods are not effective as much in terms of accuracy of inference and throughput while ONNX deployment of the model. Peak VRAM usage increases with batch size, while reducing the batch size increases the overall inference time. The batch size can be decided based on the capability of the available GPU.
+The performance improvement on pruning methods are not effective as much in terms of accuracy of inference and throughput while ONNX deployment of the model. Peak VRAM usage increases with batch size, while reducing the batch size increases the overall inference time. The batch size of input data can be decided based on the capability of the available GPU.
 
 # Limitations and Improvement
 - Quantization of the model.
